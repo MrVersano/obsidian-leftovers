@@ -27,3 +27,14 @@ npm test        # unit tests
 ```
 
 To try it, copy or symlink `main.js` and `manifest.json` into `<vault>/.obsidian/plugins/leftovers/`, then enable the plugin in **Settings → Community plugins**.
+
+## Releasing
+
+1. Bump `version` in `manifest.json` and `package.json`, and add the new version to `versions.json`.
+2. Commit, then tag the commit with the exact version (no `v` prefix) and push the tag:
+
+   ```sh
+   git tag 1.0.1 && git push origin 1.0.1
+   ```
+
+The Release workflow builds the plugin and publishes a GitHub release with `main.js` and `manifest.json` attached.
