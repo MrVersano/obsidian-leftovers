@@ -1,0 +1,23 @@
+{
+	"name": "leftovers",
+	"version": "1.0.0",
+	"description": "Obsidian plugin: pull unfinished checkboxes from previous daily notes into the current daily note.",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"test": "vitest run"
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^20.0.0",
+		"builtin-modules": "^4.0.0",
+		"esbuild": "^0.25.0",
+		"obsidian": "latest",
+		"typescript": "^5.4.0",
+		"vitest": "^3.0.0"
+	},
+	"dependencies": {
+		"obsidian-daily-notes-interface": "^0.9.4"
+	}
+}
