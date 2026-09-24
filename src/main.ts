@@ -9,7 +9,7 @@ import { extractLeftovers } from "./leftovers";
 export default class LeftoversPlugin extends Plugin {
 	async onload() {
 		this.addCommand({
-			id: "pull-leftovers",
+			id: "pull-unfinished-tasks",
 			name: "Pull unfinished tasks into this note",
 			editorCheckCallback: (checking, editor, ctx) => {
 				const file = ctx.file;

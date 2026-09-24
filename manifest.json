@@ -1,7 +1,7 @@
 {
 	"id": "leftovers",
 	"name": "Leftovers",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.4.0",
 	"description": "Pull unfinished checkboxes from previous daily notes into the current daily note.",
 	"author": "Kobi Versano",
