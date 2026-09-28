@@ -3,7 +3,7 @@
 	"name": "Leftovers",
 	"version": "1.0.1",
 	"minAppVersion": "1.4.0",
-	"description": "Pull unfinished checkboxes from previous daily notes into the current daily note.",
+	"description": "Pull unfinished checkboxes from previous daily or weekly notes into the current one.",
 	"author": "Kobi Versano",
 	"isDesktopOnly": false
 }

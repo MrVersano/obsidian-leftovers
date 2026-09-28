@@ -1,17 +1,19 @@
 # Leftovers
 
-An Obsidian plugin that moves unfinished checkboxes from previous daily notes into the note you're working on.
+An Obsidian plugin that moves unfinished checkboxes from previous daily or weekly notes into the note you're working on.
 
 ## Usage
 
-1. Open a daily note.
+1. Open a daily or weekly note.
 2. Put the cursor where you want the tasks.
 3. Run **Leftovers: Pull unfinished tasks into this note** from the command palette.
 
-Every unchecked task (`- [ ]`) from daily notes dated *before* the current note is inserted at the cursor, oldest first, and removed from the note it came from. Indented children (sub-tasks, notes) move with their parent task.
+Every unchecked task (`- [ ]`) from earlier notes of the same kind is inserted at the cursor, oldest first, and removed from the note it came from. In a daily note, tasks come from earlier daily notes; in a weekly note, from earlier weekly notes. Indented children (sub-tasks, notes) move with their parent task.
 
-- The command only appears when the active file is a daily note. Daily notes are detected from the core **Daily Notes** plugin's folder and date format (Periodic Notes is supported too).
-- Daily notes dated after the current note are never touched.
+- The command only appears when the active file is a daily or weekly note.
+  - Daily notes are detected from the core **Daily Notes** plugin's folder and date format (Periodic Notes is supported too).
+  - Weekly notes use the **Periodic Notes** or **Calendar** plugin's weekly note settings when either is installed. Otherwise, any note in the vault whose name matches the **Weekly note format** in Leftovers' settings is a weekly note. The default format is `gggg-[W]ww`, e.g. `2026-W40`.
+- Notes dated after the current note are never touched.
 - Only `[ ]` counts as unfinished. `[x]`, `[-]`, `[>]` and other statuses stay where they are.
 - Tasks inside frontmatter and code blocks are ignored.
 

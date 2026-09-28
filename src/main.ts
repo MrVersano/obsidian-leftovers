@@ -1,47 +1,117 @@
-import { Editor, Notice, Plugin, TFile } from "obsidian";
+import { Editor, moment, Notice, Plugin, TFile } from "obsidian";
 import {
 	appHasDailyNotesPluginLoaded,
+	appHasWeeklyNotesPluginLoaded,
 	getAllDailyNotes,
+	getAllWeeklyNotes,
 	getDateFromFile,
 } from "obsidian-daily-notes-interface";
 import { extractLeftovers } from "./leftovers";
+import { DEFAULT_SETTINGS, LeftoversSettings, LeftoversSettingTab } from "./settings";
+
+type Moment = ReturnType<typeof moment>;
+type Granularity = "day" | "week";
+
+interface Period {
+	granularity: Granularity;
+	/** The note's date from its filename, or null if the name doesn't match the format. */
+	parseDate(file: TFile): Moment | null;
+	/** Every note of this period in the vault. */
+	notes(): TFile[];
+}
 
 export default class LeftoversPlugin extends Plugin {
+	settings: LeftoversSettings = { ...DEFAULT_SETTINGS };
+
 	async onload() {
+		await this.loadSettings();
+		this.addSettingTab(new LeftoversSettingTab(this.app, this));
+
 		this.addCommand({
 			id: "pull-unfinished-tasks",
 			name: "Pull unfinished tasks into this note",
 			editorCheckCallback: (checking, editor, ctx) => {
 				const file = ctx.file;
-				if (!file || !this.isDailyNote(file)) return false;
-				if (!checking) void this.pullLeftovers(file, editor);
+				const period = file && this.periodOf(file);
+				if (!file || !period) return false;
+				if (!checking) void this.pullLeftovers(file, period, editor);
 				return true;
 			},
 		});
 	}
 
-	private isDailyNote(file: TFile): boolean {
-		if (!appHasDailyNotesPluginLoaded()) return false;
-		if (!getDateFromFile(file, "day")) return false;
-		return this.dailyNotes().includes(file);
+	async loadSettings() {
+		this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
 	}
 
-	private dailyNotes(): TFile[] {
-		try {
-			return Object.values(getAllDailyNotes());
-		} catch {
-			// The configured daily notes folder doesn't exist.
-			return [];
-		}
+	async saveSettings() {
+		await this.saveData(this.settings);
 	}
 
-	private async pullLeftovers(current: TFile, editor: Editor) {
-		const currentDate = getDateFromFile(current, "day");
+	/**
+	 * Daily notes come from the core Daily Notes plugin (or Periodic Notes). Weekly notes
+	 * follow Periodic Notes or Calendar when installed, and Leftovers' own format otherwise.
+	 */
+	private periods(): Period[] {
+		const periods: Period[] = [];
+		if (appHasDailyNotesPluginLoaded()) periods.push(this.pluginPeriod("day", getAllDailyNotes));
+		periods.push(
+			appHasWeeklyNotesPluginLoaded() ? this.pluginPeriod("week", getAllWeeklyNotes) : this.weeklyPeriod(),
+		);
+		return periods;
+	}
+
+	/** A period whose folder and format come from another plugin's settings. */
+	private pluginPeriod(granularity: Granularity, getAll: () => Record<string, TFile>): Period {
+		return {
+			granularity,
+			parseDate: (file) => {
+				try {
+					return getDateFromFile(file, granularity);
+				} catch {
+					// The plugin providing this period's settings isn't configured.
+					return null;
+				}
+			},
+			notes: () => {
+				try {
+					return Object.values(getAll());
+				} catch {
+					// The configured notes folder doesn't exist.
+					return [];
+				}
+			},
+		};
+	}
+
+	/** Weekly notes named with Leftovers' own format, anywhere in the vault. */
+	private weeklyPeriod(): Period {
+		// A format can contain folders ("YYYY/gggg-[W]ww"); only the last part is the filename.
+		const format = this.settings.weeklyNoteFormat.split("/").pop()!;
+		const parseDate = (file: TFile) => {
+			const date = moment(file.basename, format, true);
+			return date.isValid() ? date : null;
+		};
+		return {
+			granularity: "week",
+			parseDate,
+			notes: () => this.app.vault.getMarkdownFiles().filter((file) => parseDate(file)),
+		};
+	}
+
+	/** Returns the period the file is a note for, or null if it isn't a periodic note. */
+	private periodOf(file: TFile): Period | null {
+		return this.periods().find((period) => period.parseDate(file) && period.notes().includes(file)) ?? null;
+	}
+
+	private async pullLeftovers(current: TFile, period: Period, editor: Editor) {
+		const currentDate = period.parseDate(current);
 		if (!currentDate) return;
 
-		const sources = this.dailyNotes()
-			.map((file) => ({ file, date: getDateFromFile(file, "day") }))
-			.filter(({ date }) => date?.isBefore(currentDate, "day"))
+		const sources = period
+			.notes()
+			.map((file) => ({ file, date: period.parseDate(file) }))
+			.filter(({ date }) => date?.isBefore(currentDate, period.granularity))
 			.sort((a, b) => a.date!.valueOf() - b.date!.valueOf());
 
 		const blocks: string[] = [];
